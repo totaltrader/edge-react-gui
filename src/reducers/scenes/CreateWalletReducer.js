@@ -1,5 +1,6 @@
 // @flow
 
+import { type JsonObject } from 'edge-core-js'
 import { type Reducer, combineReducers } from 'redux'
 
 import type { Action } from '../../types/reduxActions.js'
@@ -16,7 +17,8 @@ export type AccountActivationPaymentInfo = {
   amount: string,
   currencyCode: string,
   exchangeAmount: string,
-  expireTime: number
+  expireTime: number,
+  otherParams?: JsonObject
 }
 
 export type CreateWalletState = {

@@ -18,6 +18,7 @@ import { FormField } from '../common/FormField.js'
 export type CreateWalletNameOwnProps = {
   selectedFiat: GuiFiatType,
   selectedWalletType: GuiWalletType,
+  needsAccountCreation?: boolean,
   cleanedPrivateKey?: string
 }
 type Props = CreateWalletNameOwnProps
@@ -46,14 +47,22 @@ export class CreateWalletName extends Component<Props, State> {
   }
 
   onNext = () => {
-    const { cleanedPrivateKey, selectedFiat, selectedWalletType } = this.props
+    const { cleanedPrivateKey, selectedFiat, selectedWalletType, needsAccountCreation } = this.props
     if (this.isValidWalletName()) {
-      Actions[Constants.CREATE_WALLET_REVIEW]({
-        walletName: this.state.walletName,
-        selectedFiat: selectedFiat,
-        selectedWalletType: selectedWalletType,
-        cleanedPrivateKey
-      })
+      if (needsAccountCreation) {
+        // Hedera-like: needs account activation but wallet name is local-only
+        Actions[Constants.CREATE_WALLET_ACCOUNT_SELECT]({
+          ...this.props,
+          accountName: this.state.walletName
+        })
+      } else {
+        Actions[Constants.CREATE_WALLET_REVIEW]({
+          walletName: this.state.walletName,
+          selectedFiat: selectedFiat,
+          selectedWalletType: selectedWalletType,
+          cleanedPrivateKey
+        })
+      }
     } else {
       Alert.alert(s.strings.create_wallet_invalid_name, s.strings.create_wallet_enter_valid_name)
     }

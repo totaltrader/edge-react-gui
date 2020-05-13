@@ -191,19 +191,22 @@ export const createAccountTransaction = (createdWalletId: string, accountName: s
   const { currencyWallets = {} } = account
   const createdWallet = UI_SELECTORS.getWallet(state, createdWalletId)
   const paymentWallet = currencyWallets[paymentWalletId]
+  const createdCoreWallet = currencyWallets[createdWalletId]
   const createdWalletCurrencyCode = createdWallet.currencyCode
   const currencyPluginName = Constants.CURRENCY_PLUGIN_NAMES[createdWalletCurrencyCode]
   const currencyPlugin = account.currencyConfig[currencyPluginName]
-  const { paymentAddress, amount, currencyCode } = state.ui.scenes.createWallet.walletAccountActivationPaymentInfo
+  const { paymentAddress, amount, currencyCode, otherParams } = state.ui.scenes.createWallet.walletAccountActivationPaymentInfo
   const handleAvailability = await currencyPlugin.otherMethods.validateAccount(accountName)
   const paymentDenom = getExchangeDenomination(state, currencyCode)
   let nativeAmount = bns.mul(amount, paymentDenom.multiplier)
   nativeAmount = bns.toFixed(nativeAmount, 0, 0)
+
   if (handleAvailability.result === 'AccountAvailable') {
     const guiMakeSpendInfo = {
       currencyCode,
       nativeAmount,
       publicAddress: paymentAddress,
+      otherParams,
       lockInputs: true,
       onBack: () => {
         // Hack. Keyboard pops up for some reason. Close it
@@ -211,7 +214,15 @@ export const createAccountTransaction = (createdWalletId: string, accountName: s
           currencyCode: createdWalletCurrencyCode
         })
       },
-      onDone: (error: Error | null, edgeTransaction?: EdgeTransaction) => {
+      beforeBroadcast: async (edgeTransaction: EdgeTransaction) => {
+        if (createdCoreWallet.otherMethods.submitActivationPayment) {
+          await createdCoreWallet.otherMethods.submitActivationPayment(edgeTransaction)
+          return false
+        }
+
+        return true
+      },
+      onDone: async (error: Error | null, edgeTransaction?: EdgeTransaction) => {
         if (error) {
           console.log(error)
           setTimeout(() => {

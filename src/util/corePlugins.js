@@ -32,6 +32,7 @@ export const currencyPlugins = {
   ethereum: ENV.ETHEREUM_INIT,
   ethereumclassic: false,
   fio: true,
+  hedera: true,
   ripple: true,
   rsk: true,
   stellar: true,

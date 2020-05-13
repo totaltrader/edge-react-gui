@@ -63,6 +63,8 @@ class CreateWalletSelectFiatComponent extends Component<Props, State> {
       Actions[nextSceneKey]({
         selectedWalletType: selectedWalletType,
         selectedFiat: this.getFiatType(this.state.selectedFiat),
+        // Hedera-like: wallet name is local-only but activation is still necessary
+        needsAccountCreation: specialCurrencyInfo.needsAccountCreation,
         cleanedPrivateKey
       })
     } else {
