@@ -7,7 +7,9 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome'
 import { sprintf } from 'sprintf-js'
 
 import { launchModal } from '../components/common/ModalProvider.js'
+import { ButtonsModal } from '../components/modals/ButtonsModal.js'
 import { RawTextModal } from '../components/modals/RawTextModal.js'
+import { WalletListOptionCheckPasswordModal } from '../components/modals/WalletListOptionCheckPasswordModal.js'
 import { Airship, showError } from '../components/services/AirshipInstance.js'
 import { getTheme } from '../components/services/ThemeContext.js'
 import * as Constants from '../constants/indexConstants'
@@ -102,6 +104,43 @@ export function walletListMenuAction(walletId: string, option: WalletListMenuKey
         const { currencyWallets = {} } = account
         const wallet = currencyWallets[walletId]
 
+        const password = await Airship.show(bridge => (
+          <WalletListOptionCheckPasswordModal
+            bridge={bridge}
+            buttonLabel={s.strings.fragment_wallets_get_seed_wallet}
+            message={s.strings.fragment_wallets_get_seed_wallet_first_confirm_message_mobile}
+            title={s.strings.fragment_wallets_get_seed_wallet}
+            walletName={getWalletName(wallet)}
+          />
+        ))
+
+        if (password && (await account.checkPassword(password))) {
+          await Airship.show(bridge => (
+            <ButtonsModal
+              title={s.strings.fragment_wallets_get_seed_wallet}
+              bridge={bridge}
+              message={wallet.getDisplayPrivateSeed() || undefined}
+              buttons={{ ok: { label: s.strings.string_ok_cap } }}
+            />
+          ))
+        }
+
+        const validateInput = async input => {
+          const isPassword = await account.checkPassword(input)
+          if (isPassword) {
+            dispatch({ type: 'PASSWORD_USED' })
+            return {
+              success: true,
+              message: ''
+            }
+          } else {
+            return {
+              success: false,
+              message: s.strings.password_reminder_invalid
+            }
+          }
+        }
+
         try {
           const input = {
             label: s.strings.confirm_password_text,
@@ -115,22 +154,6 @@ export function walletListMenuAction(walletId: string, option: WalletListMenuKey
           }
           const noButton = {
             title: s.strings.string_cancel_cap
-          }
-
-          const validateInput = async input => {
-            const isPassword = await account.checkPassword(input)
-            if (isPassword) {
-              dispatch({ type: 'PASSWORD_USED' })
-              return {
-                success: true,
-                message: ''
-              }
-            } else {
-              return {
-                success: false,
-                message: s.strings.password_reminder_invalid
-              }
-            }
           }
 
           const getSeedModal = createSecureTextModal({
